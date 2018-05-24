@@ -93,6 +93,7 @@ private:
      * Z Average interpolation
      */
     int     m_effectiveRayThresh;
+    int     m_numZCalculatedOn;
 
     CT_AutoRenameModels m_outInterpolatedGridModelName;
 
