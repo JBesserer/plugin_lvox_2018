@@ -11,6 +11,7 @@
 #include "mk/tools/lvox3_gridtools.h"
 #include "mk/tools/worker/lvox3_interpolatedistance.h"
 #include "mk/tools/worker/lvox3_interpolatetrustfactor.h"
+#include "mk/tools/worker/lvox3_interpolatezaverage.h"
 #include "mk/tools/lvox3_utils.h"
 
 using namespace std;
@@ -149,8 +150,9 @@ void LVOX3_StepInterpolateDistance::createPostConfigurationDialog()
     configDialog->addInt(tr("Higher bound"), tr("effective rays (Nt - Nb)"), 0, 1000, m_trustHighThreshold, tr("Voxel with higher effective rays are fully trusted"));
 
     configDialog->addEmpty();
-    configDialog->addText(tr("Parameter for Z axis average interpolation"));
+    configDialog->addText(tr("Parameters for Z axis average interpolation"));
     configDialog->addInt(tr("effective rays (Nt - Nb) Threshold"),"",0,1000, m_effectiveRayThresh,tr("Voxel with lower effective rays are considered as having a density of 0"));
+    configDialog->addInt(tr("number of height Z axis average calculated on"),"",1,1000,m_numZCalculatedOn);
 }
 
 void LVOX3_StepInterpolateDistance::createOutResultModelListProtected()
@@ -219,10 +221,8 @@ void LVOX3_StepInterpolateDistance::compute()
             out = (lvox::Grid3Df*) grid_density->copy(
                     m_outInterpolatedGridModelName.completeName(),
                     outResult, CT_ResultCopyModeList());
-            ZAverageInterpolation(grid_density,out,grid_ni,grid_nt,grid_nb);
-            //TODO: Encapsulate ZAverage in a class to be able to add a worker to it and make it standard with other methods
-            out->computeMinMax();
-            group->addItemDrawable(out);
+            worker = new LVOX3_InterpolateZAverage(
+                    grid_density, out, grid_ni, grid_nt, grid_nb, m_effectiveRayThresh, m_numZCalculatedOn);
         }
 
         if(worker != NULL) {
@@ -243,57 +243,6 @@ void LVOX3_StepInterpolateDistance::compute()
              * FIXME: that actually doesn't work.
              * FIX : you change the name of the itemdrawable so if you go in a table view you will show this name
              */
-            //item->m_result->setDisplayableName(item->m_name);
-        }
-    }
-}
-
-//This method interpolates the density grid based on the LVOX1 version of Z axis average interpolation
-void LVOX3_StepInterpolateDistance::ZAverageInterpolation(const lvox::Grid3Df *INdensityGrid, lvox::Grid3Df* const OUTdensityGrid,const lvox::Grid3Di *hitGrid,const lvox::Grid3Di *theoreticalGrid,const lvox::Grid3Di *beforeGrid){
-    // loop on z levels
-    for (size_t zz = 0 ;  zz < INdensityGrid->zdim() ; zz++)
-    {
-        float meanDensity = 0;
-        size_t ncells = 0;
-        // Compute mean value for the level z
-        for (size_t yy = 0 ;  yy < INdensityGrid->ydim() ; yy++)
-        {
-            for (size_t xx = 0 ;  xx < INdensityGrid->xdim() ; xx++)
-            {
-                float value = INdensityGrid->value(xx, yy, zz);
-                if (value > 0) // empty cells don't count for the mean density
-                {
-                    meanDensity += value;
-                    ncells++;
-                }
-            }
-        }
-        meanDensity /= ncells;
-
-        // set mean value for all NA cells
-        for (size_t yy = 0 ;  yy < INdensityGrid->ydim() ; yy++)
-        {
-            for (size_t xx = 0 ;  xx < INdensityGrid->xdim() ; xx++)
-            {
-                float value = INdensityGrid->value(xx, yy, zz);
-                if (value < 0 ) // replace NA values or incoherent density results
-                {
-                    //If even one ray was intercepted in the voxel
-                    if(hitGrid->value(xx, yy, zz) >= 1){
-                        int rays = theoreticalGrid->value(xx,yy,zz) - beforeGrid->value(xx,yy,zz);
-                        //If the number of rays is under the number of effective rays, should more or less always be true
-                        if(rays <= m_effectiveRayThresh){
-                            OUTdensityGrid->setValue(xx, yy, zz, meanDensity);
-                        }else { //Weird fringe case where Ni > Nt-Nb, error code -4 (Because the density value cant be negative and have more effectiveRayThresh than 10(default rayThresh)
-                            OUTdensityGrid->setValue(xx, yy, zz, 0.0);
-                        }
-                    } else {
-                        OUTdensityGrid->setValue(xx, yy, zz, 0.0);
-                    }
-                } else { // else if not a NA : keep the IN value
-                    OUTdensityGrid->setValue(xx, yy, zz, value);
-                }
-            }
         }
     }
 }
