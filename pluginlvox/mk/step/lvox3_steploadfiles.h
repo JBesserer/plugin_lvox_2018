@@ -88,6 +88,8 @@ protected:
 private:
     bool                                            m_useUserScannerConfiguration;
     bool                                            m_filterPointsOrigin;
+    bool                                            m_restrictScene;
+    int                                             m_restrictRadius;
     CT_AbstractReader*                              m_reader;
     QList<LoadFileConfiguration::Configuration>     m_configuration;
 
@@ -103,6 +105,11 @@ private:
      * @brief Returns a copy of the reader founded in the available list
      */
     CT_AbstractReader* getReaderByClassName(const QString& className) const;
+
+    /**
+     * @brief Returns a vector for the new coordinates of the point, if it's further than 60m of the scanner coordinates
+     */
+    bool evaluatePoint(const Eigen::Vector3d scannerCenterCoords, const CT_Point &point, Eigen::Vector3d &newPointCoordinates);
 };
 
 #endif // LVOX3_STEPLOADFILES_H

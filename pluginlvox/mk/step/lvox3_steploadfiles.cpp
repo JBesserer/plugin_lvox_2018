@@ -23,6 +23,7 @@
 #include "ct_reader/extensions/ct_readerpointsfilteringextension.h"
 #include "ct_abstractstepplugin.h"
 #include "mk/tools/lvox3_scannerutils.h"
+#include "ct_iterator/ct_mutablepointiterator.h"
 
 
 #include "ct_iterator/ct_pointiterator.h"
@@ -51,6 +52,8 @@ LVOX3_StepLoadFiles::LVOX3_StepLoadFiles(CT_StepInitializeData &dataInit) :
     m_reader = NULL;
     m_useUserScannerConfiguration = false;
     m_filterPointsOrigin = true;
+    m_restrictScene = false;
+    m_restrictRadius = 0;
 }
 
 LVOX3_StepLoadFiles::~LVOX3_StepLoadFiles()
@@ -84,6 +87,8 @@ SettingsNodeGroup* LVOX3_StepLoadFiles::getAllSettings() const
     SettingsNodeGroup *group = new SettingsNodeGroup("LVOX3_StepLoadFiles");
     group->addValue(new SettingsNodeValue("useScannerConfiguration", m_useUserScannerConfiguration));
     group->addValue(new SettingsNodeValue("filterPointsOrigin", m_filterPointsOrigin));
+    group->addValue(new SettingsNodeValue("restrictScene", m_restrictScene));
+    group->addValue(new SettingsNodeValue("restrictRadius", m_restrictRadius));
 
     SettingsNodeGroup* groupReader = new SettingsNodeGroup("Reader");
 
@@ -138,12 +143,16 @@ bool LVOX3_StepLoadFiles::setAllSettings(const SettingsNodeGroup* settings)
 
         bool useUserScannerConfiguration;
         bool filterPointsOrigin;
+        bool restrictScene;
+        int  restrictRadius;
         CT_AbstractReader* reader = NULL;
 
         SettingsNodeValue* value;
         SettingsNodeGroup* groupFile = listG.first();
         SETTING_READ("useScannerConfiguration", useUserScannerConfiguration, toBool);
         SETTING_READ("filterPointsOrigin", filterPointsOrigin, toBool);
+        SETTING_READ("restrictScene", restrictScene, toBool);
+        SETTING_READ("restrictRadius", restrictRadius, toInt);
 
         QList<SettingsNodeGroup*> listConfiguration = groupFile->groupsByTagName("File");
 
@@ -204,6 +213,8 @@ bool LVOX3_StepLoadFiles::setAllSettings(const SettingsNodeGroup* settings)
 
         m_useUserScannerConfiguration = useUserScannerConfiguration;
         m_filterPointsOrigin = filterPointsOrigin;
+        m_restrictScene = restrictScene;
+        m_restrictRadius = restrictRadius;
         m_configuration = confs;
 
         return true;
@@ -283,6 +294,8 @@ bool LVOX3_StepLoadFiles::postConfigure()
     c.setCurrentReaderByClassName(m_reader != NULL ? m_reader->GetReaderClassName() : "");
     c.setConfiguration(m_configuration);
     c.setFilterPointsOrigin(m_filterPointsOrigin);
+    c.setRestrictScene(m_restrictScene);
+    c.setRestrictRadius(m_restrictRadius);
 
     if(CT_ConfigurableWidgetToDialog::exec(&c) == QDialog::Rejected)
         return false;
@@ -310,6 +323,8 @@ bool LVOX3_StepLoadFiles::postConfigure()
             }
 
             m_filterPointsOrigin = c.isFilterPointsOrigin();
+            m_restrictScene = c.isRestrictScene();
+            m_restrictRadius = c.getRestrictRadius();
             setSettingsModified(true);
             return true;
         }
@@ -365,7 +380,8 @@ void LVOX3_StepLoadFiles::compute()
 
     int i = 0;
     size_t sceneTotalPoints = 0;
-    size_t filteredPoints = 0;
+    //size_t filteredPoints = 0;
+    size_t nShiftedPoints = 0;
     int nFilesProgress = 0; //Used to count the number of files
     QListIterator<LoadFileConfiguration::Configuration> it(m_configuration);
 
@@ -420,30 +436,9 @@ void LVOX3_StepLoadFiles::compute()
                     CT_AbstractSingularItemDrawable* item = itI.next();
 
                     if (CT_Scene *scn = dynamic_cast<CT_Scene*>(item)) {
-                        scene = scn;
-                        //Test to see which points are filtered, it doesn't seem to filter anything, since the filter is looking for points on 0,0,0 and there are none.
-//                        CT_PointIterator itPointCloud(scene->getPointCloudIndex());
-//                        size_t numberPoints = itPointCloud.size();
-//                        sceneTotalPoints += itPointCloud.size();
-
-//                        if (m_filterPointsOrigin) {
-//                            qDebug()<<"Filter Option is on!";
-//                            CT_ReaderPointsFilteringExtension* readerWithFilter = dynamic_cast<CT_ReaderPointsFilteringExtension*>(m_reader);
-
-//                            if(readerWithFilter != NULL) {
-//                                qDebug()<<"Reader with Filter exists!";
-//                                while(itPointCloud.hasNext() && !isStopped())
-//                                {
-//                                    const CT_Point &point = itPointCloud.next().currentPoint();
-
-//                                    if(readerWithFilter->isPointFiltered(point))
-//                                        ++filteredPoints;
-//                                }
-//                            }
-//                        }
+                        scene = scn; 
                     }
-
-                    group->addItemDrawable(item);
+                    //group->addItemDrawable(item);
                 }
             }
 
@@ -469,13 +464,80 @@ void LVOX3_StepLoadFiles::compute()
             if (!scene) {
                 PS_LOG->addErrorMessage(this, tr("CT_Scene object not found or loaded object has no scene."));
             }
+            //Most of this loop has to do with repositioning points in the cloud if the point cloud is not filtered(to lessen the computing range to 60 meters)
             if(scene) {
+
+                double xmin = std::numeric_limits<double>::max();
+                double ymin = std::numeric_limits<double>::max();
+                double zmin = std::numeric_limits<double>::max();
+
+                double xmax = -std::numeric_limits<double>::max();
+                double ymax = -std::numeric_limits<double>::max();
+                double zmax = -std::numeric_limits<double>::max();
+                CT_NMPCIR pcirNewPositions;
+                CT_Point shiftedPoint;
+                CT_MutablePointIterator *itNewPC = NULL;
+
+
+
+                //Test to see which points are filtered, it doesn't seem to filter anything, since the filter is looking for points on 0,0,0 and there are none.
+                CT_PointIterator itPointCloud(scene->getPointCloudIndex());
+                sceneTotalPoints += itPointCloud.size();
+
+                pcirNewPositions = PS_REPOSITORY->createNewPointCloud(itPointCloud.size());
+                itNewPC = new CT_MutablePointIterator(pcirNewPositions);
+
+                if (m_restrictScene) {
+                    if(m_restrictRadius != 0) {
+                        PS_LOG->addMessage(LogInterface::info, LogInterface::step, QString(tr("Point cloud is being narrowed.")));
+                        while(itPointCloud.hasNext() && !isStopped())
+                        {
+                            const CT_Point &point = itPointCloud.next().currentPoint();
+                            Eigen::Vector3d newPointCoordinates;
+                            if(evaluatePoint(config.scannerPosition,point,newPointCoordinates)){
+                                //((CT_Point&)(itPointCloud.currentPoint())).setValues(newPointCoordinates(0),newPointCoordinates(1),newPointCoordinates(2));
+
+                                shiftedPoint(0) = newPointCoordinates(0);
+                                shiftedPoint(1) = newPointCoordinates(1);
+                                shiftedPoint(2) = newPointCoordinates(2);
+                                if (shiftedPoint(0)<xmin) {xmin = shiftedPoint(0);}
+                                if (shiftedPoint(0)>xmax) {xmax = shiftedPoint(0);}
+                                if (shiftedPoint(1)<ymin) {ymin = shiftedPoint(1);}
+                                if (shiftedPoint(1)>ymax) {ymax = shiftedPoint(1);}
+                                if (shiftedPoint(2)<zmin) {zmin = shiftedPoint(2);}
+                                if (shiftedPoint(2)>zmax) {zmax = shiftedPoint(2);}
+                                itNewPC->next();
+                                itNewPC->replaceCurrentPoint(shiftedPoint);
+                                ++nShiftedPoints;
+                            }else{
+                                shiftedPoint = point;
+                                //In case the user inserts a filtered scene and all the points are inside the default massive bbox
+                                if (shiftedPoint(0)<xmin) {xmin = shiftedPoint(0);}
+                                if (shiftedPoint(0)>xmax) {xmax = shiftedPoint(0);}
+                                if (shiftedPoint(1)<ymin) {ymin = shiftedPoint(1);}
+                                if (shiftedPoint(1)>ymax) {ymax = shiftedPoint(1);}
+                                if (shiftedPoint(2)<zmin) {zmin = shiftedPoint(2);}
+                                if (shiftedPoint(2)>zmax) {zmax = shiftedPoint(2);}
+                                itNewPC->next();
+                                itNewPC->replaceCurrentPoint(shiftedPoint);
+                            }
+                        }
+                        PS_LOG->addMessage(LogInterface::info, LogInterface::step, QString(tr("Point cloud has been narrowed.")));
+                        scene->setBoundingBox(xmin, ymin, zmin, xmax, ymax, zmax);
+                        scene->setPointCloudIndexRegistered(pcirNewPositions);
+                        group->addItemDrawable(scene);
+                    }else{
+                        PS_LOG->addMessage(LogInterface::warning, LogInterface::step, QObject::tr("Cancelling scene narrowing : radius of 0 meter"));
+                        group->addItemDrawable(scene);
+                    }
+                }else{
+                    group->addItemDrawable(scene);
+                }
                 CT_PCIR pcir = scene->getPointCloudIndexRegistered();
                 CT_ShootingPattern *pattern = makeShootingPattern(config, pcir);
                 //Creates Scanner LVOX, to take in account custom shooting patterns and scanner position shifts
                 if(pattern != NULL) {
                     CT_Scanner *scanner = new CT_Scanner(DEF_outScannerForced, out_res, i, pattern);
-
                     group->addItemDrawable(scanner);
                 }
             }
@@ -489,8 +551,12 @@ void LVOX3_StepLoadFiles::compute()
             delete header;
         }
     }
-    PS_LOG->addMessage(LogInterface::info, LogInterface::step, QString(tr("La scène d'entrée comporte %1 points.")).arg(sceneTotalPoints));
-    PS_LOG->addMessage(LogInterface::info, LogInterface::step, QString(tr("La scène d'entrée comporte %1 points filtrés.")).arg(filteredPoints));
+
+    //Statistic for scene restriction
+    if(m_restrictScene&&m_restrictRadius != 0)
+        PS_LOG->addMessage(LogInterface::info, LogInterface::step, QString(tr("Restriction de %1 points.")).arg(nShiftedPoints));
+    //PS_LOG->addMessage(LogInterface::info, LogInterface::step, QString(tr("La scène d'entrée comporte %1 points.")).arg(sceneTotalPoints));
+    //PS_LOG->addMessage(LogInterface::info, LogInterface::step, QString(tr("La scène d'entrée comporte %1 points filtrés.")).arg(filteredPoints));
 }
 
 void LVOX3_StepLoadFiles::initReaders()
@@ -540,4 +606,26 @@ CT_AbstractReader* LVOX3_StepLoadFiles::getReaderByClassName(const QString &clas
     }
 
     return NULL;
+}
+
+//Test to see if any part of the voxel is inside the radius of the extracted grid (If it is, it is added to the extracted grid)
+bool LVOX3_StepLoadFiles::evaluatePoint(const Eigen::Vector3d scannerCenterCoords, const CT_Point &point, Eigen::Vector3d &newPointCoordinates){
+    double xc = NULL;
+    double yc = NULL;
+    double zc = NULL;
+    double uFactor = NULL;
+    double distance = sqrt(pow(scannerCenterCoords(0)-point(0),2.0)+pow(scannerCenterCoords(1)-point(1),2.0)+pow(scannerCenterCoords(2)-point(2),2.0));
+    //Find a point in 3D that is m_restrictRadius meters away from the scanner position in the direction of the point cloud point
+    if(distance > m_restrictRadius){
+        uFactor = m_restrictRadius/distance;
+        xc = (1-uFactor)*scannerCenterCoords(0)+uFactor*point(0);
+        yc = (1-uFactor)*scannerCenterCoords(1)+uFactor*point(1);
+        zc = (1-uFactor)*scannerCenterCoords(2)+uFactor*point(2);
+
+        newPointCoordinates(0) = xc;
+        newPointCoordinates(1) = yc;
+        newPointCoordinates(2) = zc;
+        return true;
+    }
+    return false;
 }

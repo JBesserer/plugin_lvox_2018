@@ -82,6 +82,26 @@ public:
     bool isFilterPointsOrigin() const;
 
     /**
+     * @brief enable or disable restrict scene
+     */
+    void setRestrictScene(bool enable);
+
+    /**
+     * @brief returns if the user requested restrict scene
+     */
+    bool isRestrictScene() const;
+
+    /**
+     * @brief sets the value of restrict scene spinbox
+     */
+    void setRestrictRadius(int radius);
+
+    /**
+     * @brief returns if the user requested restrict radius
+     */
+    int getRestrictRadius() const;
+
+    /**
      * @brief Returns all configuration
      */
     QList<Configuration> getConfiguration() const;
@@ -214,6 +234,11 @@ private slots:
      * @brief Change the current scanner type to use
      */
     void on_comboBoxScannerType_currentIndexChanged(int index);
+
+    /**
+     * @brief Change the enabled state of label_7 and spinboxRestrictRadius
+     */
+    void on_checkBoxRestrictScene_toggled(bool checked);
 };
 
 #endif // LOADFILECONFIGURATION_H

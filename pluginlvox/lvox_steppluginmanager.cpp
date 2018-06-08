@@ -63,6 +63,7 @@
 #include "mk/step/lvox3_stepinterpolatedistance.h"
 #include "mk/step/lvox3_stepmergegrids.h"
 #include "mk/step/lvox3_stepaddgridtonext.h"
+#include "mk/step/lvox3_stepextractcirculargrid.h"
 
 #include "ct_global/ct_context.h"
 #include "ct_categories/ct_stdcategory.h"
@@ -135,6 +136,7 @@ bool LVOX_StepPluginManager::loadGenericsStep()
     addNewVoxelsStep<LVOX3_StepInterpolateDistance>(QObject::tr("LVOX3"));
 
     addNewVoxelsStep<LVOX3_StepMergeGrids>(QObject::tr("LVOX3"));
+    addNewVoxelsStep<LVOX3_StepExtractCircularGrid>(QObject::tr("LVOX3"));
     addNewBetaStep<LVOX3_StepAddGridToNext>(QObject::tr("LVOX"));
 
     return true;

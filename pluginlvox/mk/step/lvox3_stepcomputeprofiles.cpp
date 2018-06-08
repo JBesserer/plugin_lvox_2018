@@ -387,46 +387,106 @@ void LVOX3_StepComputeProfiles::setStep(size_t step, LVOX3_StepComputeProfiles::
 QList<double> LVOX3_StepComputeProfiles::changeToVoxel(const CT_AbstractGrid3D* inGrid){
     QList<double> axisMinMax;
     QList<double> coordinates;
-    int voxelGridLowerX;
-    int voxelGridLowerY;
-    int voxelGridLowerZ;
+    double voxelGridLowerX;
+    double voxelGridLowerY;
+    double voxelGridLowerZ;
 
     //Have to round because it does floor or ceiling in the function setStartEnd, which plays with data accuracy
-    voxelGridLowerX = round(std::fabs(inGrid->minX()));
-    voxelGridLowerY = round(std::fabs(inGrid->minY()));
-    voxelGridLowerZ = round(std::fabs(inGrid->minZ()));
+    voxelGridLowerX = std::fabs(inGrid->minX());
+    voxelGridLowerY = std::fabs(inGrid->minY());
+    voxelGridLowerZ = std::fabs(inGrid->minZ());
 
-    //Ordonnee axis meter distance from grid lower left point calculation (MIN and MAX are declared at the top of this file)
+    qDebug()<<"voxelGridLowerX"<< voxelGridLowerX;
+    qDebug()<<"voxelGridLowerY"<< voxelGridLowerY;
+    qDebug()<<"voxelGridLowerZ"<< voxelGridLowerZ;
+
+    //sqrt(pow(scannerCenterCoords(0)-point(0),2.0)+pow(scannerCenterCoords(1)-point(1),2.0)+pow(scannerCenterCoords(2)-point(2),2.0));
+    qDebug()<<"minOrdonnee"<< m_configuration.minOrdonnee;
+    qDebug()<<"maxOrdonnee"<< m_configuration.maxOrdonnee;
+    qDebug()<<"minAbscisse"<< m_configuration.minAbscisse;
+    qDebug()<<"maxAbscisse"<< m_configuration.maxAbscisse;
+    qDebug()<<"minGen"<< m_configuration.minGen;
+    qDebug()<<"maxGen"<< m_configuration.maxGen;
+
+    //Ordonnee axis meter distance from grid lower left point calculation (MINProfile and MAXProfile are declared at the top of this file)
     if(m_configuration.ordonneeAxis.toLower() == "x"){
-        coordinates.append(MINProfile(m_configuration.minOrdonnee,inGrid->minX()) + voxelGridLowerX);
-        coordinates.append(MAXProfile(m_configuration.maxOrdonnee,inGrid->maxX()) + voxelGridLowerX);
+        if(inGrid->minX()>= 0){
+            coordinates.append(MINProfile(m_configuration.minOrdonnee,inGrid->minX()) - voxelGridLowerX);
+            coordinates.append(MAXProfile(m_configuration.maxOrdonnee,inGrid->maxX()) - voxelGridLowerX);
+
+        }else{
+            coordinates.append(MINProfile(m_configuration.minOrdonnee,inGrid->minX()) + voxelGridLowerX);
+            coordinates.append(MAXProfile(m_configuration.maxOrdonnee,inGrid->maxX()) + voxelGridLowerX);
+        }
     }else if(m_configuration.ordonneeAxis.toLower() == "y"){
-        coordinates.append(MINProfile(m_configuration.minOrdonnee,inGrid->minY()) + voxelGridLowerY);
-        coordinates.append(MAXProfile(m_configuration.maxOrdonnee,inGrid->maxY()) + voxelGridLowerY);
+        if(inGrid->minY()>= 0){
+            coordinates.append(MINProfile(m_configuration.minOrdonnee,inGrid->minY()) - voxelGridLowerY);
+            coordinates.append(MAXProfile(m_configuration.maxOrdonnee,inGrid->maxY()) - voxelGridLowerY);
+
+        }else{
+            coordinates.append(MINProfile(m_configuration.minOrdonnee,inGrid->minY()) + voxelGridLowerY);
+            coordinates.append(MAXProfile(m_configuration.maxOrdonnee,inGrid->maxY()) + voxelGridLowerY);
+        }
     }else if(m_configuration.ordonneeAxis.toLower() == "z"){
-        coordinates.append(MINProfile(m_configuration.minOrdonnee,inGrid->minZ()) + voxelGridLowerZ);
-        coordinates.append(MAXProfile(m_configuration.maxOrdonnee,inGrid->maxZ()) + voxelGridLowerZ);
+        if(inGrid->minZ()>= 0){
+            coordinates.append(MINProfile(m_configuration.minOrdonnee,inGrid->minZ()) - voxelGridLowerZ);
+            coordinates.append(MAXProfile(m_configuration.maxOrdonnee,inGrid->maxZ()) - voxelGridLowerZ);
+
+        }else{
+            coordinates.append(MINProfile(m_configuration.minOrdonnee,inGrid->minZ()) + voxelGridLowerZ);
+            coordinates.append(MAXProfile(m_configuration.maxOrdonnee,inGrid->maxZ()) + voxelGridLowerZ);
+        }
     }
 
     //Abscisse axis meter distance from grid lower left point calculation
     if((m_configuration.ordonneeAxis.toLower() == "x" && m_configuration.genAxis.toLower()=="y")||(m_configuration.ordonneeAxis.toLower() == "y" && m_configuration.genAxis.toLower()=="x")){
-        coordinates.append(MINProfile(m_configuration.minAbscisse,inGrid->minZ()) + voxelGridLowerZ);
-        coordinates.append(MAXProfile(m_configuration.maxAbscisse,inGrid->maxZ()) + voxelGridLowerZ);
+        if(inGrid->minZ()>= 0){
+            coordinates.append(MINProfile(m_configuration.minAbscisse,inGrid->minZ()) - voxelGridLowerZ);
+            coordinates.append(MAXProfile(m_configuration.maxAbscisse,inGrid->maxZ()) - voxelGridLowerZ);
+
+        }else{
+            coordinates.append(MINProfile(m_configuration.minAbscisse,inGrid->minZ()) + voxelGridLowerZ);
+            coordinates.append(MAXProfile(m_configuration.maxAbscisse,inGrid->maxZ()) + voxelGridLowerZ);
+        }
     }else if(m_configuration.ordonneeAxis.toLower() == "z" && m_configuration.genAxis.toLower()=="x"){
-        coordinates.append(MINProfile(m_configuration.minAbscisse,inGrid->minY()) + voxelGridLowerY);
-        coordinates.append(MAXProfile(m_configuration.maxAbscisse,inGrid->maxY()) + voxelGridLowerY);
+        if(inGrid->minY()>= 0){
+            coordinates.append(MINProfile(m_configuration.minAbscisse,inGrid->minY()) - voxelGridLowerY);
+            coordinates.append(MAXProfile(m_configuration.maxAbscisse,inGrid->maxY()) - voxelGridLowerY);
+
+        }else{
+            coordinates.append(MINProfile(m_configuration.minAbscisse,inGrid->minY()) + voxelGridLowerY);
+            coordinates.append(MAXProfile(m_configuration.maxAbscisse,inGrid->maxY()) + voxelGridLowerY);
+        }
     }else if(m_configuration.ordonneeAxis.toLower() == "z" && m_configuration.genAxis.toLower()=="y"){
-        coordinates.append(MINProfile(m_configuration.minAbscisse,inGrid->minX()) + voxelGridLowerX);
-        coordinates.append(MAXProfile(m_configuration.maxAbscisse,inGrid->maxX()) + voxelGridLowerX);
+        if(inGrid->minX()>= 0){
+            coordinates.append(MINProfile(m_configuration.minAbscisse,inGrid->minX()) - voxelGridLowerX);
+            coordinates.append(MAXProfile(m_configuration.maxAbscisse,inGrid->maxX()) - voxelGridLowerX);
+
+        }else{
+            coordinates.append(MINProfile(m_configuration.minAbscisse,inGrid->minX()) + voxelGridLowerX);
+            coordinates.append(MAXProfile(m_configuration.maxAbscisse,inGrid->maxX()) + voxelGridLowerX);
+        }
     }
 
     //Gen axis meter distance from grid lower left point calculation
     if(m_configuration.genAxis.toLower()=="x"){
-        coordinates.append(MINProfile(m_configuration.minGen,inGrid->minX()) + voxelGridLowerX);
-        coordinates.append(MAXProfile(m_configuration.maxGen,inGrid->maxX()) + voxelGridLowerX);
+        if(inGrid->minX()>= 0){
+            coordinates.append(MINProfile(m_configuration.minGen,inGrid->minX()) - voxelGridLowerX);
+            coordinates.append(MAXProfile(m_configuration.maxGen,inGrid->maxX()) - voxelGridLowerX);
+
+        }else{
+            coordinates.append(MINProfile(m_configuration.minGen,inGrid->minX()) + voxelGridLowerX);
+            coordinates.append(MAXProfile(m_configuration.maxGen,inGrid->maxX()) + voxelGridLowerX);
+        }
     }else if(m_configuration.genAxis.toLower()=="y"){
-        coordinates.append(MINProfile(m_configuration.minGen,inGrid->minY()) + voxelGridLowerY);
-        coordinates.append(MAXProfile(m_configuration.maxGen,inGrid->maxY()) + voxelGridLowerY);
+        if(inGrid->minY()>= 0){
+            coordinates.append(MINProfile(m_configuration.minGen,inGrid->minY()) - voxelGridLowerY);
+            coordinates.append(MAXProfile(m_configuration.maxGen,inGrid->maxY()) - voxelGridLowerY);
+
+        }else{
+            coordinates.append(MINProfile(m_configuration.minGen,inGrid->minY()) + voxelGridLowerY);
+            coordinates.append(MAXProfile(m_configuration.maxGen,inGrid->maxY()) + voxelGridLowerY);
+        }
     }
 
     //If the grid calculations are not based on percentages
@@ -448,6 +508,20 @@ QList<double> LVOX3_StepComputeProfiles::changeToVoxel(const CT_AbstractGrid3D* 
         axisMinMax.append(coordinates.at(5)/inGrid->resolution());
         axisMinMax.append(m_configuration.stepGen/inGrid->resolution()); //Step Gen is in meters when coordinates is taken
     }
+
+    qDebug()<<"coordinates 0"<< coordinates.at(0);
+    qDebug()<<"coordinates 1"<< coordinates.at(1);
+    qDebug()<<"coordinates 2"<< coordinates.at(2);
+    qDebug()<<"coordinates 3"<< coordinates.at(3);
+    qDebug()<<"coordinates 4"<< coordinates.at(4);
+    qDebug()<<"coordinates 5"<< coordinates.at(5);
+
+    qDebug()<<"axisMinMax 0" << axisMinMax.at(0);
+    qDebug()<<"axisMinMax 1" << axisMinMax.at(1);
+    qDebug()<<"axisMinMax 2" << axisMinMax.at(2);
+    qDebug()<<"axisMinMax 3" << axisMinMax.at(3);
+    qDebug()<<"axisMinMax 4" << axisMinMax.at(4);
+    qDebug()<<"axisMinMax 5" << axisMinMax.at(5);
 
     return axisMinMax;
 }

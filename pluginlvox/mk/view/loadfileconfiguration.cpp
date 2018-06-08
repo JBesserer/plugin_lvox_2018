@@ -94,6 +94,32 @@ bool LoadFileConfiguration::isFilterPointsOrigin() const
     return ui->checkBoxFilterPointsOrigin->isChecked();
 }
 
+void LoadFileConfiguration::setRestrictScene(bool enable)
+{
+    ui->checkBoxRestrictScene->setChecked(enable);
+}
+
+bool LoadFileConfiguration::isRestrictScene() const
+{
+    return ui->checkBoxRestrictScene->isChecked();
+}
+
+/**
+ * @brief sets the value of restrict scene spinbox
+ */
+void LoadFileConfiguration::setRestrictRadius(int radius)
+{
+    ui->spinBoxRestrictRadius->setValue(radius);
+}
+
+/**
+ * @brief returns if the user requested restrict radius
+ */
+int LoadFileConfiguration::getRestrictRadius() const
+{
+    return ui->spinBoxRestrictRadius->value();
+}
+
 //The get configuration reorders the items in the QMap based on how they were inserted in the widget for consistency and for new functions
 QList<LoadFileConfiguration::Configuration> LoadFileConfiguration::getConfiguration() const
 {
@@ -251,13 +277,12 @@ void LoadFileConfiguration::addFile()
             QListWidgetItem* item = new QListWidgetItem(filepath);
             Eigen::Vector3d itemScannerPosition;
             Configuration c;
-            //+Parsing file for scanner coordinates, if it's a .xyb file
+            //+Parsing file for scanner coordinates, if it's a .xyb file or .ptx file
             if(reader->GetReaderClassName() == "CT_Reader_XYB"){
 
                 itemScannerPosition = LoadFileConfigUtil::loadFileScannerCoordinatesXYB(filepath);
                 c.scannerPosition = itemScannerPosition;
             }else if(reader->GetReaderClassName() == "CT_Reader_PTX"){
-                qDebug()<<"Adding PTX";
                 itemScannerPosition = LoadFileConfigUtil::loadFileScannerCoordinatesPTX(filepath);
                 c.scannerPosition = itemScannerPosition;
             }
@@ -436,7 +461,11 @@ void LoadFileConfiguration::on_pushButtonApplyConfigurationToNextFile_clicked()
 
     if(nextRow < ui->listWidgetFiles->count()) {
         QListWidgetItem* nextItem = ui->listWidgetFiles->item(nextRow);
-        const Configuration& c = m_filesScannerConfiguration.value(nextItem);
+        Configuration cNextItem = m_filesScannerConfiguration.value(nextItem);
+        Configuration c = m_filesScannerConfiguration.value(item);
+        //Keeps original filepath and scanner positions
+        c.filepath = cNextItem.filepath;
+        c.scannerPosition = cNextItem.scannerPosition;
         m_filesScannerConfiguration.insert(nextItem, c);
         ui->listWidgetFiles->setCurrentRow(nextRow);
         editItem(nextItem);
@@ -458,6 +487,10 @@ void LoadFileConfiguration::on_pushButtonApplyConfigurationToAll_clicked()
 
     while(it.hasNext()) {
         it.next();
+        Configuration cNextItem = it.value();
+        //Keeps original filepath and scanner positions
+        c.filepath = cNextItem.filepath;
+        c.scannerPosition = cNextItem.scannerPosition;
         it.setValue(c);
     }
 }
@@ -533,4 +566,10 @@ void LoadFileConfiguration::setCurrentScannerType(ScannerTypeEnum scannerId)
 void LoadFileConfiguration::on_comboBoxScannerType_currentIndexChanged(int index)
 {
     setCurrentScannerType(static_cast<ScannerTypeEnum>(ui->comboBoxScannerType->itemData(index).toInt()));
+}
+
+void LoadFileConfiguration::on_checkBoxRestrictScene_toggled(bool checked)
+{
+    ui->label_7->setEnabled(checked);
+    ui->spinBoxRestrictRadius->setEnabled(checked);
 }

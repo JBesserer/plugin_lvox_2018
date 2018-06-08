@@ -51,6 +51,40 @@
           </property>
          </widget>
         </item>
+        <item>
+         <widget class="QCheckBox" name="checkBoxRestrictScene">
+          <property name="text">
+           <string>Restreindre la scène</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <layout class="QGridLayout" name="gridLayout_7">
+          <item row="0" column="0">
+           <widget class="QLabel" name="label_7">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>200</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>Rayon de la scène restreinte (m)</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QSpinBox" name="spinBoxRestrictRadius">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
        </layout>
       </widget>
      </item>
@@ -87,14 +121,14 @@
             <item>
              <widget class="QPushButton" name="pushButtonAddFile">
               <property name="text">
-               <string>Ajouter .xyb</string>
+               <string>Ajouter</string>
               </property>
              </widget>
             </item>
             <item>
              <widget class="QPushButton" name="pushButtonModifyFile">
               <property name="text">
-               <string>Modifier .xyb</string>
+               <string>Modifier</string>
               </property>
              </widget>
             </item>

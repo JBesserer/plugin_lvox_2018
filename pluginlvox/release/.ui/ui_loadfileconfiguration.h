@@ -24,6 +24,7 @@
 #include <QtWidgets/QListWidget>
 #include <QtWidgets/QPushButton>
 #include <QtWidgets/QSpacerItem>
+#include <QtWidgets/QSpinBox>
 #include <QtWidgets/QVBoxLayout>
 #include <QtWidgets/QWidget>
 
@@ -41,6 +42,10 @@ public:
     QGroupBox *groupBox_4;
     QVBoxLayout *verticalLayout_2;
     QCheckBox *checkBoxFilterPointsOrigin;
+    QCheckBox *checkBoxRestrictScene;
+    QGridLayout *gridLayout_7;
+    QLabel *label_7;
+    QSpinBox *spinBoxRestrictRadius;
     QGroupBox *groupBox_2;
     QVBoxLayout *verticalLayout_5;
     QLabel *label_2;
@@ -139,6 +144,29 @@ public:
         checkBoxFilterPointsOrigin->setEnabled(false);
 
         verticalLayout_2->addWidget(checkBoxFilterPointsOrigin);
+
+        checkBoxRestrictScene = new QCheckBox(groupBox_4);
+        checkBoxRestrictScene->setObjectName(QStringLiteral("checkBoxRestrictScene"));
+
+        verticalLayout_2->addWidget(checkBoxRestrictScene);
+
+        gridLayout_7 = new QGridLayout();
+        gridLayout_7->setObjectName(QStringLiteral("gridLayout_7"));
+        label_7 = new QLabel(groupBox_4);
+        label_7->setObjectName(QStringLiteral("label_7"));
+        label_7->setEnabled(false);
+        label_7->setMaximumSize(QSize(200, 16777215));
+
+        gridLayout_7->addWidget(label_7, 0, 0, 1, 1);
+
+        spinBoxRestrictRadius = new QSpinBox(groupBox_4);
+        spinBoxRestrictRadius->setObjectName(QStringLiteral("spinBoxRestrictRadius"));
+        spinBoxRestrictRadius->setEnabled(false);
+
+        gridLayout_7->addWidget(spinBoxRestrictRadius, 0, 1, 1, 1);
+
+
+        verticalLayout_2->addLayout(gridLayout_7);
 
 
         verticalLayout_6->addWidget(groupBox_4);
@@ -495,13 +523,15 @@ public:
         label->setText(QApplication::translate("LoadFileConfiguration", "Choix du lecteur :", Q_NULLPTR));
         groupBox_4->setTitle(QApplication::translate("LoadFileConfiguration", "Options", Q_NULLPTR));
         checkBoxFilterPointsOrigin->setText(QApplication::translate("LoadFileConfiguration", "Supprimer les points dont les coordonn\303\251es sont (0,0,0)", Q_NULLPTR));
+        checkBoxRestrictScene->setText(QApplication::translate("LoadFileConfiguration", "Restreindre la sc\303\250ne", Q_NULLPTR));
+        label_7->setText(QApplication::translate("LoadFileConfiguration", "Rayon de la sc\303\250ne restreinte (m)", Q_NULLPTR));
         groupBox_2->setTitle(QApplication::translate("LoadFileConfiguration", " Chemin des fichiers ", Q_NULLPTR));
         label_2->setText(QApplication::translate("LoadFileConfiguration", "Ajouter les chemins de fichiers \303\240 charger :", Q_NULLPTR));
 #ifndef QT_NO_TOOLTIP
         listWidgetFiles->setToolTip(QApplication::translate("LoadFileConfiguration", "<html><head/><body><p>- <span style=\" font-weight:600;\">Ajouter</span> un chemin de fichier en cliquant sur le bouton &quot;Ajouter&quot;.</p><p>- <span style=\" font-weight:600;\">Modifier</span> un chemin de fichier en s\303\251lectionnant la ligne et en appuyant sur le bouton &quot;Modifier&quot;</p><p>- <span style=\" font-weight:600;\">Supprimer</span> un chemin de fichier en s\303\251lectionnant la ligne et en appuyant sur le bouton &quot;Supprimer&quot;</p></body></html>", Q_NULLPTR));
 #endif // QT_NO_TOOLTIP
-        pushButtonAddFile->setText(QApplication::translate("LoadFileConfiguration", "Ajouter .xyb", Q_NULLPTR));
-        pushButtonModifyFile->setText(QApplication::translate("LoadFileConfiguration", "Modifier .xyb", Q_NULLPTR));
+        pushButtonAddFile->setText(QApplication::translate("LoadFileConfiguration", "Ajouter", Q_NULLPTR));
+        pushButtonModifyFile->setText(QApplication::translate("LoadFileConfiguration", "Modifier", Q_NULLPTR));
         pushButtonImportFile->setText(QApplication::translate("LoadFileConfiguration", "Importer .in", Q_NULLPTR));
         pushButtonExportFiles->setText(QApplication::translate("LoadFileConfiguration", "Exporter en .in", Q_NULLPTR));
         pushButtonDeleteFile->setText(QApplication::translate("LoadFileConfiguration", "Supprimer", Q_NULLPTR));

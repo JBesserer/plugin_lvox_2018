@@ -105,7 +105,8 @@ HEADERS += $${PLUGIN_SHARED_INTERFACE_DIR}/interfaces.h \
     mk/tools/lvox3_scannerutils.h \
     lvox_sharedfortest.h \
     mk/tools/worker/lvox3_computehitsbefore.h \
-    mk/step/lvox3_stepaddgridtonext.h
+    mk/step/lvox3_stepaddgridtonext.h \
+    mk/step/lvox3_stepextractcirculargrid.h
 
 SOURCES += \
     lvox_pluginentry.cpp \
@@ -176,7 +177,8 @@ SOURCES += \
     mk/tools/lvox3_mergegrids.cpp \
     mk/tools/worker/lvox3_mergegridsworker.cpp \
     mk/tools/worker/lvox3_computehitsbefore.cpp \
-    mk/step/lvox3_stepaddgridtonext.cpp
+    mk/step/lvox3_stepaddgridtonext.cpp \
+    mk/step/lvox3_stepextractcirculargrid.cpp
 
 include(muParser/muparser.pri)
 

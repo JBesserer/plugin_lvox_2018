@@ -158,7 +158,6 @@ LVOX3_ComputeLVOXGridsPreparator::Result LVOX3_ComputeLVOXGridsPreparator::prepa
                        );
 
     res.valid = true;
-    qDebug()<<"Is leaving";
     return res;
 }
 

@@ -149,7 +149,7 @@ void VoxelReducerSumRatio::join(const VoxelData &rhs) {
 }
 
 VoxelData &VoxelReducerSumRatio::value() {
-    if ((m_data.nt - m_data.nb) > 0) {
+    if ((m_data.nt - m_data.nb) > m_opts.effectiveRaysThreshold) {
         m_data.rd = (float)m_data.ni / (m_data.nt - m_data.nb);
     }
     return m_data;
@@ -170,7 +170,7 @@ void VoxelReducerWeightedRDI::join(const VoxelData &rhs) {
 }
 
 VoxelData &VoxelReducerWeightedRDI::value() {
-    if ((m_data.nt - m_data.nb) > 0) {
+    if ((m_data.nt - m_data.nb) > m_opts.effectiveRaysThreshold) {
         m_data.rd = tempRDI / ntMinusNb;
     }
     return m_data;
