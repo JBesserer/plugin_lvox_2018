@@ -47,13 +47,6 @@ protected:
     void doTheJob();
 
 private:
-    /*m_originalDensityGrid = (lvox::Grid3Df*)INdensityGrid;
-    m_outDensityGrid = (lvox::Grid3Df*)OUTdensityGrid;
-    m_beforeGrid = (lvox::Grid3Di*)beforeGrid;
-    m_theoriticalsGrid = (lvox::Grid3Di*)theoreticalGrid;
-    m_hitGrid = (lvox::Grid3Di*)hitGrid;
-    m_effectiveRayThreshold = effectiveRayThreshold;*/
-
     lvox::Grid3Df*      m_originalDensityGrid;
     lvox::Grid3Di*      m_beforeGrid;
     lvox::Grid3Di*      m_theoriticalsGrid;

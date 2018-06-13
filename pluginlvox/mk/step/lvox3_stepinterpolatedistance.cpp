@@ -12,6 +12,7 @@
 #include "mk/tools/worker/lvox3_interpolatedistance.h"
 #include "mk/tools/worker/lvox3_interpolatetrustfactor.h"
 #include "mk/tools/worker/lvox3_interpolatezaverage.h"
+#include "mk/tools/worker/lvox3_interpolatekriging.h"
 #include "mk/tools/lvox3_utils.h"
 
 using namespace std;
@@ -31,7 +32,7 @@ LVOX3_StepInterpolateDistance::LVOX3_StepInterpolateDistance(CT_StepInitializeDa
     m_interpolationMethodCollection.insert(tr("Trust"), Trust);
     //Version from LVOX1, less accurate but faster
     m_interpolationMethodCollection.insert(tr("Z Axis Average"),ZAverage);
-
+    m_interpolationMethodCollection.insert(tr("Kriging"),Kriging);
     // TODO : change compute method to enable do this !
     //m_interpolationMethodCollection.insert(tr("Distance and Trust"), DistanceAndTrust);
 }
@@ -223,6 +224,12 @@ void LVOX3_StepInterpolateDistance::compute()
                     outResult, CT_ResultCopyModeList());
             worker = new LVOX3_InterpolateZAverage(
                     grid_density, out, grid_ni, grid_nt, grid_nb, m_effectiveRayThresh, m_numZCalculatedOn);
+        }else if(m_interpolationMethodCollection.value(m_interpolationMethod) == Kriging){
+            out = (lvox::Grid3Df*) grid_density->copy(
+                    m_outInterpolatedGridModelName.completeName(),
+                    outResult, CT_ResultCopyModeList());
+            worker = new LVOX3_InterpolateKriging(
+                        grid_density,grid_nb,grid_nt,out,m_interpolateRadius);
         }
 
         if(worker != NULL) {

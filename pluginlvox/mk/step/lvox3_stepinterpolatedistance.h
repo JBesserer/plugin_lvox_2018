@@ -23,7 +23,8 @@ public:
         Distance = 0,
         Trust,
         DistanceAndTrust,
-        ZAverage
+        ZAverage,
+        Kriging
     };
 
     LVOX3_StepInterpolateDistance(CT_StepInitializeData &dataInit);
